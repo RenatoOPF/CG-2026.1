@@ -1,8 +1,2 @@
-# executáveis
-bin/
-
-# arquivos objeto
-*.o
-
-# arquivos temporários
-*.out
+bin/*
+!bin/.gitkeep
