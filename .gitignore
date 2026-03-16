@@ -1,0 +1,8 @@
+# executáveis
+bin/
+
+# arquivos objeto
+*.o
+
+# arquivos temporários
+*.out

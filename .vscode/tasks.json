@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Compilar e Executar OpenGL",
+      "type": "shell",
+      "command": "gcc ${file} -o bin/${fileBasenameNoExtension} -lGL -lGLU -lglut && ./bin/${fileBasenameNoExtension}",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"]
+    }
+  ]
+}
