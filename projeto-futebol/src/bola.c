@@ -18,7 +18,7 @@ void atualizar_bola(float dt) {
     bola_x += bola_vx * dt;
     bola_z += bola_vz * dt;
     
-    // Atrito
+    // Atrito teste
     bola_vx *= 0.98f;
     bola_vz *= 0.98f;
     
