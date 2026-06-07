@@ -1,3 +1,7 @@
 # Markdown (exceto README)
 *.md
 !README.md
+
+# Artefatos de compilação
+obj/*.o
+futebol_cg
