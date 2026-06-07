@@ -1,8 +1,4 @@
-#ifndef BOLA_H
-#define BOLA_H
-
-void desenhar_bola();
-void atualizar_bola(float dt);
-void resetar_bola();
-
-#endif
+#pragma once
+#include "globals.h"
+void desenharBola();
+void atualizarBola(float dt, float dirX, float dirZ);
