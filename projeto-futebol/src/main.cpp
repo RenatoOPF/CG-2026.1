@@ -88,6 +88,7 @@ void keyboard(unsigned char key, int, int) {
         gBall = Ball{};
         gGame = GameState{};
         initJogadores();
+        playApito();
     }
     if (key == 27) exit(0);
 }

@@ -91,7 +91,7 @@ void verificarGol() {
     if (gBall.z < -hl && fabsf(gBall.x) < gw) {
         gGame.scoreB++;
         gGame.goalActive = true;
-        gGame.goalTimer  = 2.0f;
+        gGame.goalTimer  = 2.5f;
         gGame.goalTeam   = TEAM_B;
         playGol();
     }
@@ -99,7 +99,7 @@ void verificarGol() {
     else if (gBall.z > hl && fabsf(gBall.x) < gw) {
         gGame.scoreA++;
         gGame.goalActive = true;
-        gGame.goalTimer  = 2.0f;
+        gGame.goalTimer  = 2.5f;
         gGame.goalTeam   = TEAM_A;
         playGol();
     }
