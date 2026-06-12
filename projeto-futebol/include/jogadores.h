@@ -1,4 +1,5 @@
 #pragma once
 void initJogadores();
-void desenharJogadores();
+// sombra=true: desenha só a geometria (sem cores), para a projeção de sombra
+void desenharJogadores(bool sombra = false);
 void atualizarIA(float dt);

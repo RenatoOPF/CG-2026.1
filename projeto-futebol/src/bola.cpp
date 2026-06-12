@@ -98,6 +98,14 @@ void desenharBola() {
     glPopMatrix();
 }
 
+// Geometria simples para a projeção de sombra (a cor vem do passe de sombra)
+void desenharSombraBola() {
+    glPushMatrix();
+    glTranslatef(gBall.x, gBall.y, gBall.z);
+    glutSolidSphere(BALL_R, 12, 12);
+    glPopMatrix();
+}
+
 void atualizarBola(float dt, float dirX, float dirZ) {
     float tvx = dirX * BALL_MAX_SPEED;
     float tvz = dirZ * BALL_MAX_SPEED;

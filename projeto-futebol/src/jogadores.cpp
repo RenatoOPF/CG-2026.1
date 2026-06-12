@@ -40,7 +40,7 @@ void initJogadores() {
     }
 }
 
-static void desenharJogador(const Player& p) {
+static void desenharJogador(const Player& p, bool sombra) {
     float r, g, b;
     if (p.isGK) {
         // Goleiro team A = verde; team B = preto
@@ -61,7 +61,7 @@ static void desenharJogador(const Player& p) {
     glRotatef(p.facing, 0.0f, 1.0f, 0.0f);
 
     // Pernas
-    glColor3f(0.15f, 0.15f, 0.5f);
+    if (!sombra) glColor3f(0.15f, 0.15f, 0.5f);
     for (int side = -1; side <= 1; side += 2) {
         glPushMatrix();
         glTranslatef(side * PLR_BW * 0.25f, LH / 2.0f, 0.0f);
@@ -72,7 +72,7 @@ static void desenharJogador(const Player& p) {
     }
 
     // Tronco
-    glColor3f(r, g, b);
+    if (!sombra) glColor3f(r, g, b);
     glPushMatrix();
     glTranslatef(0.0f, LH + BH / 2.0f, 0.0f);
     glScalef(PLR_BW, BH, PLR_BW * 0.65f);
@@ -85,13 +85,13 @@ static void desenharJogador(const Player& p) {
         glTranslatef(side * (PLR_BW * 0.65f), LH + BH * 0.75f, 0.0f);
         glRotatef(-side * p.legAngle * 0.8f, 1.0f, 0.0f, 0.0f);
         glScalef(LW * 1.6f, BH * 0.7f, LW * 1.6f);
-        glColor3f(r, g, b);
+        if (!sombra) glColor3f(r, g, b);
         glutSolidCube(1.0f);
         glPopMatrix();
     }
 
     // Cabeça
-    glColor3f(0.95f, 0.78f, 0.65f);
+    if (!sombra) glColor3f(0.95f, 0.78f, 0.65f);
     glPushMatrix();
     glTranslatef(0.0f, LH + BH + HR, 0.0f);
     glutSolidSphere(HR, 8, 8);
@@ -100,9 +100,9 @@ static void desenharJogador(const Player& p) {
     glPopMatrix();
 }
 
-void desenharJogadores() {
+void desenharJogadores(bool sombra) {
     for (const auto& p : gPlayers)
-        desenharJogador(p);
+        desenharJogador(p, sombra);
 }
 
 void atualizarIA(float dt) {

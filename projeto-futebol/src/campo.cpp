@@ -1,5 +1,6 @@
 #include "campo.h"
 #include "globals.h"
+#include "texturas.h"
 #include <cmath>
 
 static void circulo(float cx, float cz, float raio, int seg, float y = 0.1f) {
@@ -73,26 +74,38 @@ void desenharCampo() {
     const float hw = FW / 2.0f;
     const float hl = FL / 2.0f;
 
-    // Gramado
-    glColor3f(0.13f, 0.54f, 0.13f);
+    // Gramado texturizado (mapeamento: 1 tile a cada 2.5u)
+    const float TS = 2.5f;
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, gTexGrama);
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glNormal3f(0.0f, 1.0f, 0.0f);
     glBegin(GL_QUADS);
-        glVertex3f(-hw, 0.0f, -hl);
-        glVertex3f( hw, 0.0f, -hl);
-        glVertex3f( hw, 0.0f,  hl);
-        glVertex3f(-hw, 0.0f,  hl);
+        glTexCoord2f(0.0f,        0.0f);        glVertex3f(-hw, 0.0f,  hl);
+        glTexCoord2f(FW/TS,       0.0f);        glVertex3f( hw, 0.0f,  hl);
+        glTexCoord2f(FW/TS,       FL/TS);       glVertex3f( hw, 0.0f, -hl);
+        glTexCoord2f(0.0f,        FL/TS);       glVertex3f(-hw, 0.0f, -hl);
     glEnd();
 
-    // Listras
+    // Listras: mesma textura, modulada mais escura
     const int NLISTRAS = 8;
     const float lw = FW / NLISTRAS;
-    glColor3f(0.11f, 0.48f, 0.11f);
+    glColor3f(0.82f, 0.82f, 0.82f);
     glBegin(GL_QUADS);
     for (int i = 0; i < NLISTRAS; i += 2) {
         float x0 = -hw + i * lw, x1 = x0 + lw;
-        glVertex3f(x0, 0.01f, -hl); glVertex3f(x1, 0.01f, -hl);
-        glVertex3f(x1, 0.01f,  hl); glVertex3f(x0, 0.01f,  hl);
+        float u0 = (x0 + hw) / TS, u1 = (x1 + hw) / TS;
+        glTexCoord2f(u0, 0.0f);  glVertex3f(x0, 0.01f,  hl);
+        glTexCoord2f(u1, 0.0f);  glVertex3f(x1, 0.01f,  hl);
+        glTexCoord2f(u1, FL/TS); glVertex3f(x1, 0.01f, -hl);
+        glTexCoord2f(u0, FL/TS); glVertex3f(x0, 0.01f, -hl);
     }
     glEnd();
+    glDisable(GL_TEXTURE_2D);
+
+    // Linhas do campo: brancas puras, sem iluminação nem textura
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
+    glDisable(GL_LIGHTING);
 
     glColor3f(1.0f, 1.0f, 1.0f);
     glLineWidth(2.0f);
@@ -150,6 +163,8 @@ void desenharCampo() {
     arcoCanto( hw,  hl, (float)M_PI);
     arcoCanto(-hw,  hl, 3.0f * (float)M_PI / 2.0f);
 
+    glPopAttrib();   // restaura iluminação/textura para os gols
+
     // Gols com cilindros
     const float GW = GOAL_W / 2.0f;
     const float GH = GOAL_H;
@@ -181,19 +196,47 @@ void desenharCampo() {
         drawCylinder(q, -GW, GH,   gb,  GW, GH,   gb, GR);
         drawCylinder(q, -GW, 0.0f, gb,  GW, 0.0f, gb, GR);
 
-        // Rede (mantida como linhas)
-        glColor3f(0.85f, 0.85f, 0.85f);
-        glLineWidth(1.0f);
-        const int NGRID = 6;
-        glBegin(GL_LINES);
-        for (int i = 0; i <= NGRID; i++) {
-            float t = (float)i / NGRID;
-            float rx = -GW + t * GOAL_W;
-            glVertex3f(rx, 0.0f, gb); glVertex3f(rx, GH, gb);
-            float ry = t * GH;
-            glVertex3f(-GW, ry, gb); glVertex3f(GW, ry, gb);
-        }
+        // --- Rede: quads texturizados com furos (alpha test) cobrindo as
+        //     faces traseira, laterais e superior do gol ---
+        const float S = 3.0f;   // células da rede por unidade
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, gTexRede);
+        glEnable(GL_ALPHA_TEST);
+        glAlphaFunc(GL_GREATER, 0.5f);
+        glColor3f(0.92f, 0.92f, 0.92f);
+
+        glBegin(GL_QUADS);
+        // Face traseira (normal coerente com o winding; TWO_SIDE corrige o outro lado)
+        glNormal3f(0.0f, 0.0f, 1.0f);
+        glTexCoord2f(0.0f,      0.0f); glVertex3f(-GW, 0.0f, gb);
+        glTexCoord2f(GOAL_W*S,  0.0f); glVertex3f( GW, 0.0f, gb);
+        glTexCoord2f(GOAL_W*S,  GH*S); glVertex3f( GW, GH,   gb);
+        glTexCoord2f(0.0f,      GH*S); glVertex3f(-GW, GH,   gb);
+
+        // Face lateral esquerda (x = -GW)
+        glNormal3f(gz - gb, 0.0f, 0.0f);
+        glTexCoord2f(0.0f,  0.0f); glVertex3f(-GW, 0.0f, gz);
+        glTexCoord2f(GD*S,  0.0f); glVertex3f(-GW, 0.0f, gb);
+        glTexCoord2f(GD*S,  GH*S); glVertex3f(-GW, GH,   gb);
+        glTexCoord2f(0.0f,  GH*S); glVertex3f(-GW, GH,   gz);
+
+        // Face lateral direita (x = +GW)
+        glNormal3f(gz - gb, 0.0f, 0.0f);
+        glTexCoord2f(0.0f,  0.0f); glVertex3f( GW, 0.0f, gz);
+        glTexCoord2f(GD*S,  0.0f); glVertex3f( GW, 0.0f, gb);
+        glTexCoord2f(GD*S,  GH*S); glVertex3f( GW, GH,   gb);
+        glTexCoord2f(0.0f,  GH*S); glVertex3f( GW, GH,   gz);
+
+        // Face superior (y = GH)
+        glNormal3f(0.0f, gz - gb, 0.0f);
+        glTexCoord2f(0.0f,      0.0f); glVertex3f(-GW, GH, gz);
+        glTexCoord2f(GOAL_W*S,  0.0f); glVertex3f( GW, GH, gz);
+        glTexCoord2f(GOAL_W*S,  GD*S); glVertex3f( GW, GH, gb);
+        glTexCoord2f(0.0f,      GD*S); glVertex3f(-GW, GH, gb);
         glEnd();
+
+        glDisable(GL_ALPHA_TEST);
+        glDisable(GL_TEXTURE_2D);
         glColor3f(1.0f, 1.0f, 1.0f);
     };
 

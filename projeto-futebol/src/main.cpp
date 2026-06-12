@@ -8,6 +8,8 @@
 #include "estadio.h"
 #include "camera.h"
 #include "som.h"
+#include "texturas.h"
+#include "iluminacao.h"
 
 Ball                gBall;
 std::vector<Player> gPlayers;
@@ -19,14 +21,23 @@ static bool specialKeys[256] = {};
 static int  tempoAnterior   = 0;
 
 void display() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glLoadIdentity();
 
     setupCamera();
+    aplicarLuzes();
 
     desenharEstadio();
     desenharTorcida();
     desenharCampo();
+
+    // Sombras projetadas no gramado, antes dos objetos que as geram
+    if (iniciarSombra()) {
+        desenharJogadores(true);
+        desenharSombraBola();
+        finalizarSombra();
+    }
+
     desenharJogadores();
     desenharBola();
     desenharPlacar();
@@ -90,6 +101,8 @@ void keyboard(unsigned char key, int, int) {
         initJogadores();
         playApito();
     }
+    if (key == 'l' || key == 'L') gLuzOn = !gLuzOn;
+    if (key == 'n' || key == 'N') { gNoite = !gNoite; atualizarCeu(); }
     if (key == 27) exit(0);
 }
 void keyboardUp(unsigned char key, int, int) { keys[key] = false; }
@@ -107,12 +120,14 @@ void reshape(int w, int h) {
 
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
     glutInitWindowSize(WIN_W, WIN_H);
     glutCreateWindow("Futebol 3D - CG 2026.1 | Estádio Rei Pelé");
 
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.52f, 0.74f, 0.95f, 1.0f);  // céu azul claro
+    initTexturas();
+    initIluminacao();
+    atualizarCeu();
 
     initSom();
     initJogadores();
@@ -129,6 +144,8 @@ int main(int argc, char** argv) {
     printf("=== Futebol 3D ===\n");
     printf("WASD / Setas : mover bola\n");
     printf("C            : alternar camera (Bola / TV / Topo)\n");
+    printf("L            : ligar/desligar iluminacao\n");
+    printf("N            : alternar dia/noite (refletores)\n");
     printf("R            : reiniciar\n");
     printf("ESC          : sair\n");
 

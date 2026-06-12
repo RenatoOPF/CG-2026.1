@@ -21,6 +21,9 @@ void desenharPlacar() {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
+    glPushAttrib(GL_ENABLE_BIT);   // HUD 2D: sem iluminação, textura ou profundidade
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
 
     // --- Fundo do placar (barra superior) ---
@@ -72,10 +75,10 @@ void desenharPlacar() {
     const char* cams[] = {"[Cam: Bola]", "[Cam: TV]", "[Cam: Topo]"};
     glColor3f(0.9f, 0.9f, 0.9f);
     texto(cams[gCamera], 10, WIN_H - 30, GLUT_BITMAP_HELVETICA_12);
-    texto("WASD/Setas: mover bola   C: camera   R: reiniciar   ESC: sair",
+    texto("WASD/Setas: mover bola   C: camera   L: luz   N: dia/noite   R: reiniciar   ESC: sair",
           10, 12, GLUT_BITMAP_HELVETICA_12);
 
-    glEnable(GL_DEPTH_TEST);
+    glPopAttrib();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
