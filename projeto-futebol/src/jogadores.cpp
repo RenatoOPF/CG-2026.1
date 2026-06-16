@@ -161,7 +161,7 @@ void atualizarIA(float dt) {
         float bdx   = gBall.x - p.x;
         float bdz   = gBall.z - p.z;
         float bdist = sqrtf(bdx*bdx + bdz*bdz);
-        const float TOUCH = BALL_R + PLR_BW * 0.7f;
+        const float TOUCH = BALL_R + PLR_BW * 1.1f;
 
         if (isChaser && p.kickCooldown <= 0.0f) {
             if (bdist > TOUCH) {

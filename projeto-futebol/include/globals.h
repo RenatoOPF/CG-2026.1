@@ -31,11 +31,13 @@ const float PLR_BW     = 0.4f;
 const int TEAM_A = 0;  // Amarelo
 const int TEAM_B = 1;  // Azul claro
 
-enum CameraMode { CAM_BALL = 0, CAM_TV = 1, CAM_TOP = 2 };
+enum CameraMode { CAM_BALL = 0, CAM_TV = 1, CAM_TOP = 2, CAM_FREE = 3 };
 
 struct Ball {
     float x = 0.0f, y = BALL_R, z = 0.0f;
-    float vx = 0.0f, vz = 0.0f;
+    float vx = 0.0f, vy = 0.0f, vz = 0.0f;
+    // Orientação acumulada da rolagem (column-major, identidade inicial)
+    float rot[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
 };
 
 struct Player {

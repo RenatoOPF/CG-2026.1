@@ -87,18 +87,19 @@ void desenharCampo() {
         glTexCoord2f(0.0f,        FL/TS);       glVertex3f(-hw, 0.0f, -hl);
     glEnd();
 
-    // Listras: mesma textura, modulada mais escura
-    const int NLISTRAS = 8;
-    const float lw = FW / NLISTRAS;
-    glColor3f(0.82f, 0.82f, 0.82f);
+    // Faixas horizontais de corte: bandas ao longo de Z (atravessam a largura).
+    // Contraste suave (0.85 vs 1.0): visível com a luz, sem ficar escuro demais.
+    const int NLISTRAS = 12;
+    const float lz = FL / NLISTRAS;
+    glColor3f(0.85f, 0.85f, 0.85f);
     glBegin(GL_QUADS);
     for (int i = 0; i < NLISTRAS; i += 2) {
-        float x0 = -hw + i * lw, x1 = x0 + lw;
-        float u0 = (x0 + hw) / TS, u1 = (x1 + hw) / TS;
-        glTexCoord2f(u0, 0.0f);  glVertex3f(x0, 0.01f,  hl);
-        glTexCoord2f(u1, 0.0f);  glVertex3f(x1, 0.01f,  hl);
-        glTexCoord2f(u1, FL/TS); glVertex3f(x1, 0.01f, -hl);
-        glTexCoord2f(u0, FL/TS); glVertex3f(x0, 0.01f, -hl);
+        float za = -hl + i * lz, zb = za + lz;
+        float v0 = (hl - za) / TS, v1 = (hl - zb) / TS;
+        glTexCoord2f(0.0f,  v0); glVertex3f(-hw, 0.01f, za);
+        glTexCoord2f(FW/TS, v0); glVertex3f( hw, 0.01f, za);
+        glTexCoord2f(FW/TS, v1); glVertex3f( hw, 0.01f, zb);
+        glTexCoord2f(0.0f,  v1); glVertex3f(-hw, 0.01f, zb);
     }
     glEnd();
     glDisable(GL_TEXTURE_2D);

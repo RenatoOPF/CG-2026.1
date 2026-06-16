@@ -3,15 +3,12 @@
 #include <GL/glut.h>
 #include <cmath>
 
-// Deve coincidir com estadio.cpp
+// Deve coincidir com a tigela de arquibancada em estadio.cpp
 static const float PISTA_L = 3.8f;
 static const float PISTA_E = 5.0f;
-static const int   NDEG    = 10;
-static const float DEG_W   = 1.3f;
-static const float DEG_H   = 1.2f;
-static const int   NDEG_E  = 7;
-static const float DEG_WE  = 1.4f;
-static const float DEG_HE  = 1.1f;
+static const int   NB  = 10;     // nº de degraus (fileiras)
+static const float STD = 1.3f;   // profundidade de cada degrau
+static const float STH = 1.2f;   // altura de cada degrau
 
 // Torcedor sentado (compacto para não sobressair no degrau)
 static void torcedor(float x, float y, float z,
@@ -34,67 +31,75 @@ static void torcedor(float x, float y, float z,
     glPopMatrix();
 }
 
+// Paleta de cores por índice (camisas da torcida)
+static void corTorcedor(int idx, float& r, float& g, float& b) {
+    switch (idx % 3) {
+        case 0:  r=0.9f; g=0.1f; b=0.1f; break;   // vermelho
+        case 1:  r=1.0f; g=1.0f; b=1.0f; break;   // branco
+        default: r=0.9f; g=0.7f; b=0.0f; break;   // amarelo
+    }
+}
+
 void desenharTorcida() {
     const float hw  = FW / 2.0f;   // 20
     const float hl  = FL / 2.0f;   // 30
     const float t   = gGame.time;
 
-    const float SX0  = hw + PISTA_L;          // 23.8
-    const float SZ0  = hl + PISTA_E;          // 35.0
-    const float SXout = SX0 + NDEG * DEG_W;   // 36.8
-    const float z0   = -(hl + PISTA_E);       // -35
-    const float z1   =   hl + PISTA_E;        //  35
+    const float SX0 = hw + PISTA_L;   // 23.8
+    const float SZ0 = hl + PISTA_E;   // 35.0
 
     // Ola: onda senoidal percorre o estádio
     const float WAVE_SPEED = 2.5f;
     const float WAVE_LEN   = 50.0f;
-
     auto ola = [&](float pos) -> float {
-        float s = 0.5f + 0.5f * sinf(pos / WAVE_LEN * 2.0f * (float)M_PI - t * WAVE_SPEED);
-        return s;  // 0..1
+        return 0.5f + 0.5f * sinf(pos / WAVE_LEN * 2.0f * (float)M_PI - t * WAVE_SPEED);
     };
 
-    // --- Bancadas laterais ---
+    // --- Bancadas laterais (fileiras ao longo de Z, nos dois lados em X) ---
     const int COLS_L = 24;
-    for (int k = 0; k < NDEG; k++) {
-        float xMid = SX0 + k * DEG_W + DEG_W * 0.5f;
-        float yBase = (k + 1) * DEG_H;
-
+    for (int k = 0; k < NB; k++) {
+        float xMid  = SX0 + k * STD + STD * 0.5f;
+        float yBase = (k + 1) * STH;
         for (int col = 0; col < COLS_L; col++) {
-            float bz = z0 + (col + 0.5f) * (z1 - z0) / COLS_L;
+            float bz = -SZ0 + (col + 0.5f) * (2.0f * SZ0) / COLS_L;
             float o  = ola(bz + k * 4.0f);
-
-            // Cor alternada por col+row (mistura de azul e amarelo/vermelho)
-            float r, g, b;
-            int cor = (col + k) % 3;
-            if      (cor == 0) { r=0.9f; g=0.1f; b=0.1f; }   // vermelho
-            else if (cor == 1) { r=1.0f; g=1.0f; b=1.0f; }   // branco
-            else               { r=0.9f; g=0.7f; b=0.0f; }   // amarelo
-
+            float r, g, b; corTorcedor(col + k, r, g, b);
             torcedor(-xMid, yBase, bz, r, g, b, o);
             torcedor( xMid, yBase, bz, r, g, b, o);
         }
     }
 
-    // --- Bancadas de fundo (atrás dos gols) ---
-    const int COLS_E = 18;
-    for (int k = 0; k < NDEG_E; k++) {
-        float zMid = SZ0 + k * DEG_WE + DEG_WE * 0.5f;
-        float yBase = (k + 1) * DEG_HE;
-
+    // --- Bancadas de fundo (faixa central |x|<SX0; cantos preenchem o resto) ---
+    const int COLS_E = 24;
+    for (int k = 0; k < NB; k++) {
+        float zMid  = SZ0 + k * STD + STD * 0.5f;
+        float yBase = (k + 1) * STH;
         for (int col = 0; col < COLS_E; col++) {
-            float bx = -SXout + (col + 0.5f) * (2.0f * SXout / COLS_E);
+            float bx = -SX0 + (col + 0.5f) * (2.0f * SX0) / COLS_E;
             float o_s = ola(bx + k * 4.0f + 10.0f);
             float o_n = ola(bx + k * 4.0f + 60.0f);
+            float r, g, b; corTorcedor(col + k, r, g, b);
+            torcedor(bx, yBase, -zMid, r, g, b, o_s);   // sul
+            torcedor(bx, yBase,  zMid, r, g, b, o_n);   // norte
+        }
+    }
 
-            float r, g, b;
-            int cor = (col + k) % 3;
-            if      (cor == 0) { r=0.9f; g=0.1f; b=0.1f; }
-            else if (cor == 1) { r=1.0f; g=1.0f; b=1.0f; }
-            else               { r=0.2f; g=0.2f; b=0.8f; }   // azul
-
-            torcedor(bx, yBase, -zMid, r, g, b, o_s);  // sul
-            torcedor(bx, yBase,  zMid, r, g, b, o_n);  // norte
+    // --- Cantos arredondados (quartos de arco ligando laterais e fundos) ---
+    const int COLS_C = 7;
+    const float quad[4][2] = { {1,1}, {1,-1}, {-1,1}, {-1,-1} };
+    for (auto& q : quad) {
+        float sx = q[0], sz = q[1];
+        for (int k = 0; k < NB; k++) {
+            float rm    = (k + 0.5f) * STD;        // raio médio do degrau
+            float yBase = (k + 1) * STH;
+            for (int col = 0; col < COLS_C; col++) {
+                float a = (col + 0.5f) / COLS_C * (float)M_PI * 0.5f;
+                float bx = sx * (SX0 + rm * cosf(a));
+                float bz = sz * (SZ0 + rm * sinf(a));
+                float o  = ola((sx*sz) * a * 20.0f + k * 4.0f + 30.0f);
+                float r, g, b; corTorcedor(col + k, r, g, b);
+                torcedor(bx, yBase, bz, r, g, b, o);
+            }
         }
     }
 }

@@ -1,45 +1,35 @@
 #include "iluminacao.h"
 #include "globals.h"
+#include "texturas.h"
 #include <GL/glut.h>
 
 bool gLuzOn = true;
-bool gNoite = false;
+bool gNoite = false;   // false = meio-dia, true = entardecer (sol baixo)
 
-// Posições das torres de iluminação — deve coincidir com estadio.cpp
-static const float TORRE_X = 38.8f;   // SXout + 2
-static const float TORRE_Z = 46.8f;   // SZout + 2
-static const float TORRE_Y = 27.5f;   // TH + 0.5 (plataforma de refletores)
+// Direção do campo para o sol. Única fonte de luz do projeto: a mesma direção
+// alimenta a luz direcional, a projeção de sombra e o disco solar visível, para
+// que iluminação, sombras e o sol no céu fiquem coerentes. De dia o sol é mais
+// alto; ao entardecer fica baixo no horizonte (sombras longas e luz alaranjada).
+static void sunDir(float out[3]) {
+    if (!gNoite) { out[0] = -0.60f; out[1] = 0.48f; out[2] = -0.30f; }  // ~35°: visível e sombras médias
+    else         { out[0] = -0.88f; out[1] = 0.20f; out[2] = -0.30f; }  // ~12°: entardecer, sombras longas
+}
 
 void initIluminacao() {
     glEnable(GL_LIGHTING);
 
-    // glColor passa a definir o material (ambiente + difuso): permite manter
-    // todas as chamadas glColor3f existentes no projeto
+    // glColor define o material (ambiente + difuso): mantém todas as chamadas
+    // glColor3f existentes no projeto funcionando como cor de superfície.
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
 
-    // Brilho especular discreto para todos os objetos
-    const GLfloat spec[] = {0.25f, 0.25f, 0.25f, 1.0f};
+    // Especular discreto (sol não deixa tudo plástico)
+    const GLfloat spec[] = {0.16f, 0.16f, 0.15f, 1.0f};
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, spec);
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32.0f);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 24.0f);
 
-    // glScalef não-uniforme (jogadores, torcida) exige renormalização
-    glEnable(GL_NORMALIZE);
-    // Faces vistas por trás (rede do gol, arquibancadas) recebem luz correta
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-
-    // LIGHT1..LIGHT4: refletores das torres (spots) — parâmetros fixos
-    const GLfloat spotDif[] = {1.0f, 0.97f, 0.85f, 1.0f};
-    const GLfloat spotSpc[] = {0.6f, 0.6f, 0.55f, 1.0f};
-    for (int i = 0; i < 4; i++) {
-        GLenum L = GL_LIGHT1 + i;
-        glLightfv(L, GL_DIFFUSE,  spotDif);
-        glLightfv(L, GL_SPECULAR, spotSpc);
-        glLightf(L, GL_SPOT_CUTOFF,   40.0f);
-        glLightf(L, GL_SPOT_EXPONENT,  4.0f);
-        glLightf(L, GL_CONSTANT_ATTENUATION, 1.0f);
-        glLightf(L, GL_LINEAR_ATTENUATION,   0.004f);
-    }
+    glEnable(GL_NORMALIZE);                              // glScalef não-uniforme
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);     // faces vistas por trás
 }
 
 void aplicarLuzes() {
@@ -48,61 +38,46 @@ void aplicarLuzes() {
         return;
     }
     glEnable(GL_LIGHTING);
+    // Sem refletores artificiais: o sol (LIGHT0) é a única fonte.
+    for (int i = 1; i < 8; i++) glDisable(GL_LIGHT0 + i);
+
+    float d[3]; sunDir(d);
+    const GLfloat pos[] = {d[0], d[1], d[2], 0.0f};   // w=0: luz direcional (sol distante)
 
     if (!gNoite) {
-        // --- Dia: sol direcional (w=0) com ambiente forte ---
-        const GLfloat amb[]  = {0.30f, 0.30f, 0.30f, 1.0f};
-        const GLfloat dif[]  = {0.85f, 0.83f, 0.78f, 1.0f};
-        const GLfloat spc[]  = {0.50f, 0.50f, 0.45f, 1.0f};
-        const GLfloat pos[]  = {0.4f, 1.0f, 0.3f, 0.0f};
-        const GLfloat globalAmb[] = {0.22f, 0.22f, 0.24f, 1.0f};
-        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globalAmb);
+        // Meio-dia: difusa + ambiente calibrados para NÃO saturar o gramado
+        // claro (senão a faixa escura destoaria demais sob a luz).
+        const GLfloat amb[] = {0.32f, 0.32f, 0.33f, 1.0f};
+        const GLfloat dif[] = {0.82f, 0.80f, 0.74f, 1.0f};
+        const GLfloat spc[] = {0.35f, 0.35f, 0.32f, 1.0f};
+        const GLfloat glb[] = {0.18f, 0.18f, 0.20f, 1.0f};
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, glb);
         glLightfv(GL_LIGHT0, GL_AMBIENT,  amb);
         glLightfv(GL_LIGHT0, GL_DIFFUSE,  dif);
         glLightfv(GL_LIGHT0, GL_SPECULAR, spc);
-        glLightfv(GL_LIGHT0, GL_POSITION, pos);
-        glEnable(GL_LIGHT0);
-        for (int i = 0; i < 4; i++) glDisable(GL_LIGHT1 + i);
     } else {
-        // --- Noite: lua fraca azulada + 4 refletores spot nas torres ---
-        const GLfloat amb[]  = {0.02f, 0.02f, 0.04f, 1.0f};
-        const GLfloat dif[]  = {0.10f, 0.12f, 0.20f, 1.0f};
-        const GLfloat spc[]  = {0.05f, 0.05f, 0.08f, 1.0f};
-        const GLfloat pos[]  = {-0.3f, 1.0f, -0.2f, 0.0f};
-        const GLfloat globalAmb[] = {0.07f, 0.07f, 0.10f, 1.0f};
-        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globalAmb);
+        // Entardecer: sol baixo e alaranjado, ambiente quente
+        const GLfloat amb[] = {0.26f, 0.21f, 0.20f, 1.0f};
+        const GLfloat dif[] = {0.85f, 0.55f, 0.32f, 1.0f};
+        const GLfloat spc[] = {0.40f, 0.28f, 0.18f, 1.0f};
+        const GLfloat glb[] = {0.16f, 0.13f, 0.14f, 1.0f};
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, glb);
         glLightfv(GL_LIGHT0, GL_AMBIENT,  amb);
         glLightfv(GL_LIGHT0, GL_DIFFUSE,  dif);
         glLightfv(GL_LIGHT0, GL_SPECULAR, spc);
-        glLightfv(GL_LIGHT0, GL_POSITION, pos);
-        glEnable(GL_LIGHT0);
-
-        const float sx[] = {-1, 1, -1, 1};
-        const float sz[] = {-1, -1, 1, 1};
-        for (int i = 0; i < 4; i++) {
-            GLenum L = GL_LIGHT1 + i;
-            GLfloat pos[]  = {sx[i] * TORRE_X, TORRE_Y, sz[i] * TORRE_Z, 1.0f};
-            // Cada torre aponta para o quadrante mais próximo do campo
-            GLfloat alvoX = sx[i] * 6.0f, alvoZ = sz[i] * 10.0f;
-            GLfloat dir[] = {alvoX - pos[0], -TORRE_Y, alvoZ - pos[2]};
-            glLightfv(L, GL_POSITION, pos);
-            glLightfv(L, GL_SPOT_DIRECTION, dir);
-            glEnable(L);
-        }
     }
+    glLightfv(GL_LIGHT0, GL_POSITION, pos);
+    glEnable(GL_LIGHT0);
 }
 
 bool iniciarSombra() {
     if (!gLuzOn) return false;   // sem luz, sem sombra
 
-    // Direção da luz dominante: sol de dia; à noite os refletores vêm de
-    // cima, então a projeção é quase vertical
-    float lx, ly, lz;
-    if (!gNoite) { lx = 0.4f;  ly = 1.0f; lz = 0.3f;  }
-    else         { lx = 0.12f; ly = 1.0f; lz = 0.08f; }
+    float d[3]; sunDir(d);
+    float lx = d[0], ly = d[1], lz = d[2];
 
-    // Matriz (column-major) que projeta cada vértice no plano y=0
-    // seguindo a direção da luz: x' = x - (lx/ly)y, z' = z - (lz/ly)y
+    // Matriz (column-major) que projeta cada vértice no plano y=0 na direção
+    // da luz: x' = x - (lx/ly)y, z' = z - (lz/ly)y
     GLfloat m[16] = {
         1.0f,    0.0f, 0.0f,    0.0f,
         -lx/ly,  0.0f, -lz/ly,  0.0f,
@@ -118,13 +93,12 @@ bool iniciarSombra() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);
 
-    // Stencil: cada pixel de sombra é pintado uma única vez, evitando que
-    // partes sobrepostas (pernas + tronco projetados) escureçam em dobro
+    // Stencil: cada pixel de sombra é pintado uma única vez (evita dobra)
     glEnable(GL_STENCIL_TEST);
     glStencilFunc(GL_EQUAL, 0, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
 
-    glColor4f(0.0f, 0.0f, 0.0f, 0.40f);
+    glColor4f(0.0f, 0.0f, 0.0f, gNoite ? 0.45f : 0.50f);
 
     glPushMatrix();
     glTranslatef(0.0f, 0.05f, 0.0f);   // levemente acima do gramado
@@ -138,6 +112,69 @@ void finalizarSombra() {
 }
 
 void atualizarCeu() {
-    if (gNoite) glClearColor(0.04f, 0.05f, 0.10f, 1.0f);
-    else        glClearColor(0.52f, 0.74f, 0.95f, 1.0f);
+    // Usado só como fundo quando não há imagem de céu carregada.
+    if (gNoite) glClearColor(0.92f, 0.55f, 0.32f, 1.0f);   // entardecer alaranjado
+    else        glClearColor(0.52f, 0.74f, 0.95f, 1.0f);   // azul de meio-dia
+}
+
+// Esfera de céu texturizada (imagem panorâmica). Raio grande o suficiente para
+// envolver a cena; desenhada sem luz e sem escrever profundidade, então tudo
+// aparece na frente dela.
+void desenharCeu() {
+    GLuint tex = gNoite ? gTexCeuTarde : gTexCeu;
+    if (tex == 0) tex = gTexCeu;   // sem céu de entardecer: usa o de dia
+    if (tex == 0) return;          // sem imagem alguma: fica só o glClear
+
+    glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_CURRENT_BIT);
+    glDisable(GL_LIGHTING);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+    GLUquadric* q = gluNewQuadric();
+    gluQuadricTexture(q, GL_TRUE);
+    gluQuadricNormals(q, GLU_NONE);
+    gluQuadricOrientation(q, GLU_INSIDE);   // vista de dentro
+
+    glPushMatrix();
+    glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);    // eixo da esfera (z) -> vertical (y)
+    gluSphere(q, 450.0, 28, 20);
+    glPopMatrix();
+
+    gluDeleteQuadric(q);
+    glPopAttrib();
+}
+
+// Disco solar visível, na direção exata da luz. Núcleo brilhante + halos
+// aditivos. Auto-iluminado (sem GL_LIGHTING). Mais perto que o céu (450) para
+// aparecer na frente dele.
+void desenharSol() {
+    if (!gLuzOn) return;
+
+    float d[3]; sunDir(d);
+    float L = sqrtf(d[0]*d[0] + d[1]*d[1] + d[2]*d[2]);
+    // Mais perto do estádio (parallax baixa a altura aparente) e menor.
+    const float D = 150.0f;
+    float sx = d[0]/L * D, sy = d[1]/L * D, sz = d[2]/L * D;
+
+    float cr, cg, cb;
+    if (!gNoite) { cr = 1.0f; cg = 0.97f; cb = 0.84f; }   // meio-dia
+    else         { cr = 1.0f; cg = 0.60f; cb = 0.28f; }   // entardecer
+
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);     // aditivo: brilho
+
+    glPushMatrix();
+    glTranslatef(sx, sy, sz);
+    glColor4f(cr, cg, cb, 0.16f); glutSolidSphere(26.0f, 20, 20);   // halo externo
+    glColor4f(cr, cg, cb, 0.32f); glutSolidSphere(16.0f, 20, 20);   // halo interno
+    glColor4f(cr, cg, cb, 1.0f);  glutSolidSphere(9.0f, 24, 24);    // núcleo
+    glPopMatrix();
+
+    glPopAttrib();
 }

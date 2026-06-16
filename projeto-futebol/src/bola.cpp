@@ -9,6 +9,31 @@ static V3 v3n(V3 v) {
     return {v.x/l, v.y/l, v.z/l};
 }
 
+// out = A * B, todas as matrizes 4x4 em column-major (formato do OpenGL)
+static void mulMat(float* out, const float* A, const float* B) {
+    float r[16];
+    for (int c = 0; c < 4; c++)
+        for (int row = 0; row < 4; row++) {
+            float s = 0.0f;
+            for (int k = 0; k < 4; k++) s += A[k*4 + row] * B[c*4 + k];
+            r[c*4 + row] = s;
+        }
+    for (int i = 0; i < 16; i++) out[i] = r[i];
+}
+
+// Acumula uma rotação (eixo unitário, ângulo) na orientação da bola, aplicada
+// no referencial do mundo: rot = R * rot. (matriz de Rodrigues em column-major)
+static void rotacionar(float ax, float ay, float az, float ang) {
+    float c = cosf(ang), s = sinf(ang), t = 1.0f - c;
+    float R[16] = {
+        c + ax*ax*t,     ax*ay*t + az*s,  ax*az*t - ay*s,  0.0f,
+        ax*ay*t - az*s,  c + ay*ay*t,     ay*az*t + ax*s,  0.0f,
+        ax*az*t + ay*s,  ay*az*t - ax*s,  c + az*az*t,     0.0f,
+        0.0f,            0.0f,            0.0f,            1.0f
+    };
+    mulMat(gBall.rot, R, gBall.rot);
+}
+
 static void drawFace(const V3* pts, int n, float r, float cr, float cg, float cb) {
     V3 c = {0,0,0};
     for (int i = 0; i < n; i++) { c.x+=pts[i].x; c.y+=pts[i].y; c.z+=pts[i].z; }
@@ -65,6 +90,7 @@ void desenharBola() {
 
     glPushMatrix();
     glTranslatef(gBall.x, gBall.y, gBall.z);
+    glMultMatrixf(gBall.rot);   // orientação acumulada da rolagem
 
     // 20 white hexagons
     for (int f = 0; f < 20; f++) {
@@ -115,6 +141,13 @@ void atualizarBola(float dt, float dirX, float dirZ) {
 
     gBall.x += gBall.vx * dt;
     gBall.z += gBall.vz * dt;
+
+    // Rolagem sem deslizamento: gira em torno do eixo horizontal perpendicular
+    // ao movimento, com ângulo = distância percorrida / raio.
+    float sp = sqrtf(gBall.vx*gBall.vx + gBall.vz*gBall.vz);
+    if (sp > 0.01f) {
+        rotacionar(gBall.vz / sp, 0.0f, -gBall.vx / sp, sp * dt / BALL_R);
+    }
 
     const float hw = FW / 2.0f - BALL_R;
     const float hl = FL / 2.0f;

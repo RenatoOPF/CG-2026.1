@@ -26,6 +26,8 @@ void display() {
 
     setupCamera();
     aplicarLuzes();
+    desenharCeu();
+    desenharSol();
 
     desenharEstadio();
     desenharTorcida();
@@ -61,6 +63,29 @@ void timer(int) {
     }
 
     if (!gGame.goalActive) {
+        if (gCamera == CAM_FREE) {
+            // Modo drone: WASD voa, Q/E desce/sobe, setas olham ao redor.
+            // A bola e a IA seguem simulando, mas não recebem input do teclado.
+            float frente = 0, lado = 0, cima = 0, dyaw = 0, dpitch = 0;
+            if (keys['w'] || keys['W']) frente += 1.0f;
+            if (keys['s'] || keys['S']) frente -= 1.0f;
+            if (keys['d'] || keys['D']) lado   += 1.0f;
+            if (keys['a'] || keys['A']) lado   -= 1.0f;
+            if (keys['e'] || keys['E']) cima   += 1.0f;
+            if (keys['q'] || keys['Q']) cima   -= 1.0f;
+            if (specialKeys[GLUT_KEY_RIGHT]) dyaw   += 1.0f;
+            if (specialKeys[GLUT_KEY_LEFT])  dyaw   -= 1.0f;
+            if (specialKeys[GLUT_KEY_UP])    dpitch += 1.0f;
+            if (specialKeys[GLUT_KEY_DOWN])  dpitch -= 1.0f;
+            moverCameraLivre(dt, frente, lado, cima, dyaw, dpitch);
+            atualizarBola(dt, 0.0f, 0.0f);
+            atualizarIA(dt);
+            verificarGol();
+            glutPostRedisplay();
+            glutTimerFunc(16, timer, 0);
+            return;
+        }
+
         // Na câmera TV o sinal inverte conforme o lado em que a câmera está,
         // para que W/S/A/D sempre correspondam à direção visual na tela.
         float sign = (gCamera == CAM_TOP) ? 1.0f : gCamSign;
@@ -101,6 +126,15 @@ void keyboard(unsigned char key, int, int) {
         initJogadores();
         playApito();
     }
+    if (key == 'f' || key == 'F') {
+        gCamera = (gCamera == CAM_FREE) ? CAM_TV : CAM_FREE;
+        if (gCamera == CAM_FREE) {
+            glutSetCursor(GLUT_CURSOR_NONE);      // mouse-look: esconde o cursor
+            glutWarpPointer(WIN_W / 2, WIN_H / 2);
+        } else {
+            glutSetCursor(GLUT_CURSOR_INHERIT);
+        }
+    }
     if (key == 'l' || key == 'L') gLuzOn = !gLuzOn;
     if (key == 'n' || key == 'N') { gNoite = !gNoite; atualizarCeu(); }
     if (key == 27) exit(0);
@@ -108,6 +142,17 @@ void keyboard(unsigned char key, int, int) {
 void keyboardUp(unsigned char key, int, int) { keys[key] = false; }
 void specialDown(int key, int, int) { if (key < 256) specialKeys[key] = true; }
 void specialUp(int key, int, int)   { if (key < 256) specialKeys[key] = false; }
+
+// Mouse-look da câmera drone: usa o deslocamento em relação ao centro e
+// reposiciona o cursor no centro, permitindo giro contínuo.
+void mouseMotion(int x, int y) {
+    if (gCamera != CAM_FREE) return;
+    int cx = WIN_W / 2, cy = WIN_H / 2;
+    int dx = x - cx, dy = y - cy;
+    if (dx == 0 && dy == 0) return;     // evento gerado pelo próprio warp
+    girarCameraLivre((float)dx, (float)dy);
+    glutWarpPointer(cx, cy);
+}
 
 void reshape(int w, int h) {
     if (h == 0) h = 1;
@@ -139,11 +184,14 @@ int main(int argc, char** argv) {
     glutKeyboardUpFunc(keyboardUp);
     glutSpecialFunc(specialDown);
     glutSpecialUpFunc(specialUp);
+    glutPassiveMotionFunc(mouseMotion);   // mouse-look (sem botão)
+    glutMotionFunc(mouseMotion);          // mouse-look (com botão)
     glutTimerFunc(16, timer, 0);
 
     printf("=== Futebol 3D ===\n");
     printf("WASD / Setas : mover bola\n");
     printf("C            : alternar camera (Bola / TV / Topo)\n");
+    printf("F            : camera livre (drone) - WASD voa, Q/E sobe-desce, MOUSE olha\n");
     printf("L            : ligar/desligar iluminacao\n");
     printf("N            : alternar dia/noite (refletores)\n");
     printf("R            : reiniciar\n");
