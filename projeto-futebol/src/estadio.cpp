@@ -328,3 +328,47 @@ void desenharEstadio() {
         glVertex3f(-GND,-0.1f,-GND);
     glEnd();
 }
+
+// Geometria simplificada (telhado, colunas e torres) para o passe de sombra.
+// Recalcula as mesmas dimensões usadas em desenharEstadio.
+void desenharSombraEstrutura() {
+    const float hw = FW / 2.0f, hl = FL / 2.0f;
+    const float PISTA_L = 3.8f, PISTA_E = 5.0f;
+    const float SX0 = hw + PISTA_L, SZ0 = hl + PISTA_E;
+    const int   NB = 10; const float STD = 1.3f, STH = 1.2f;
+    const float SXout = SX0 + NB * STD, SZout = SZ0 + NB * STD, SHout = NB * STH;
+    const float RY = SHout + 5.0f, REXT = SXout + 2.0f, RINT = SX0 - 2.0f;
+    const float RZ0 = -SZ0 + 3.0f, RZ1 = SZ0 - 3.0f;
+    const float TH = RY + 10.0f;
+
+    // Painel do telhado (esquerdo e direito), projetado como quad plano
+    glBegin(GL_QUADS);
+    glVertex3f(-RINT, RY, RZ0); glVertex3f(-REXT, RY, RZ0);
+    glVertex3f(-REXT, RY, RZ1); glVertex3f(-RINT, RY, RZ1);
+    glVertex3f( REXT, RY, RZ0); glVertex3f( RINT, RY, RZ0);
+    glVertex3f( RINT, RY, RZ1); glVertex3f( REXT, RY, RZ1);
+    glEnd();
+
+    // Colunas de sustentação na borda externa
+    for (int s = -1; s <= 1; s += 2) {
+        float px = s * REXT;
+        for (float pz = RZ0; pz <= RZ1 + 0.01f; pz += 8.0f) {
+            glPushMatrix();
+            glTranslatef(px, RY / 2.0f, pz);
+            glScalef(1.3f, RY, 1.3f);
+            glutSolidCube(1.0f);
+            glPopMatrix();
+        }
+    }
+
+    // Torres dos cantos
+    float corners[4][2] = { {-SXout-2.0f,-SZout-2.0f},{SXout+2.0f,-SZout-2.0f},
+                            {-SXout-2.0f, SZout+2.0f},{SXout+2.0f, SZout+2.0f} };
+    for (auto& c : corners) {
+        glPushMatrix();
+        glTranslatef(c[0], TH / 2.0f, c[1]);
+        glScalef(1.2f, TH, 1.2f);
+        glutSolidCube(1.0f);
+        glPopMatrix();
+    }
+}

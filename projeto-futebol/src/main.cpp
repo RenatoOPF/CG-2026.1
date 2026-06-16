@@ -38,6 +38,7 @@ void display() {
         desenharJogadores(true);
         desenharSombraBola();
         desenharSombraGols();
+        desenharSombraEstrutura();
         finalizarSombra();
     }
 

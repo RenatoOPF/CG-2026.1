@@ -75,7 +75,7 @@ void desenharPlacar() {
     // --- Horário atual (canto superior direito) ---
     const char* hora = (gHorario == HORA_TARDE) ? "Horario: Entardecer"
                      : (gHorario == HORA_NOITE) ? "Horario: Noite"
-                     :                            "Horario: Meio-dia";
+                     :                            "Horario: Manha";
     glColor3f(1.0f, 0.95f, 0.80f);
     texto(hora, WIN_W - 200, WIN_H - 30, GLUT_BITMAP_HELVETICA_18);
 
