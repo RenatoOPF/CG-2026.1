@@ -83,7 +83,7 @@ void desenharPlacar() {
     const char* cams[] = {"[Cam: Bola]", "[Cam: TV]", "[Cam: Aerea]", "[Cam: Livre]"};
     glColor3f(0.9f, 0.9f, 0.9f);
     texto(cams[gCamera], 10, WIN_H - 30, GLUT_BITMAP_HELVETICA_12);
-    texto("WASD/Setas: mover bola   C: camera   L: luz   N: dia/noite   R: reiniciar   ESC: sair",
+    texto("WASD/Setas: mover bola   C: camera   L: luz   H: horario   R: reiniciar   ESC: sair",
           10, 12, GLUT_BITMAP_HELVETICA_12);
 
     glPopAttrib();
