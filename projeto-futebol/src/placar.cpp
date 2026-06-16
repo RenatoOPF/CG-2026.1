@@ -122,10 +122,24 @@ void desenharPlacar() {
     glColor3f(1.0f, 0.95f, 0.80f);
     texto(hora, WIN_W - 200, WIN_H - 30, GLUT_BITMAP_HELVETICA_18);
 
+    // --- FPS (canto superior esquerdo) ---
+    static int   fpsFrames = 0, fpsT0 = 0, fps = 0;
+    fpsFrames++;
+    int fpsNow = glutGet(GLUT_ELAPSED_TIME);
+    if (fpsT0 == 0) fpsT0 = fpsNow;
+    if (fpsNow - fpsT0 >= 500) {   // atualiza 2x por segundo
+        fps   = (int)(fpsFrames * 1000.0f / (fpsNow - fpsT0) + 0.5f);
+        fpsFrames = 0; fpsT0 = fpsNow;
+    }
+    char fpsbuf[16];
+    snprintf(fpsbuf, sizeof(fpsbuf), "FPS: %d", fps);
+    glColor3f(0.7f, 1.0f, 0.7f);
+    texto(fpsbuf, 10, WIN_H - 30, GLUT_BITMAP_HELVETICA_12);
+
     // --- HUD inferior: controles e câmera ---
     const char* cams[] = {"[Cam: Bola]", "[Cam: TV]", "[Cam: Aerea]", "[Cam: Livre]"};
     glColor3f(0.9f, 0.9f, 0.9f);
-    texto(cams[gCamera], 10, WIN_H - 30, GLUT_BITMAP_HELVETICA_12);
+    texto(cams[gCamera], 10, WIN_H - 48, GLUT_BITMAP_HELVETICA_12);
     texto("WASD/Setas: mover bola   C: camera   L: luz   H: horario   R: reiniciar   ESC: sair",
           10, 12, GLUT_BITMAP_HELVETICA_12);
 
