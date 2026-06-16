@@ -41,12 +41,21 @@ void desenharPlacar() {
 
     // Placar: "Amarelo 0 x 0 Azul"
     char buf[64];
-    snprintf(buf, sizeof(buf), "Brasil  %d  x  %d  Argentina", gGame.scoreA, gGame.scoreB);
+    snprintf(buf, sizeof(buf), "     Brasil  %d  x  %d  Argentina", gGame.scoreA, gGame.scoreB);
     glColor3f(1.0f, 1.0f, 1.0f);
     texto(buf, WIN_W / 2.0f - 120, WIN_H - 30, GLUT_BITMAP_HELVETICA_18);
 
+    // --- Cronômetro regressivo da partida (abaixo do placar) ---
+    int rem = (int)ceilf(MATCH_DURATION - gGame.time);
+    if (rem < 0) rem = 0;
+    if (rem > (int)MATCH_DURATION) rem = (int)MATCH_DURATION;
+    char tbuf[16];
+    snprintf(tbuf, sizeof(tbuf), "%d:%02d", rem / 60, rem % 60);
+    glColor3f(1.0f, 1.0f, 0.6f);
+    texto(tbuf, WIN_W / 2.0f - 16, WIN_H - 62, GLUT_BITMAP_HELVETICA_18);
+
     // --- Mensagem de GOL ---
-    if (gGame.goalActive) {
+    if (gGame.goalActive && !gGame.matchOver) {
         // Fundo semitransparente
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -65,11 +74,45 @@ void desenharPlacar() {
         else                          glColor3f(0.53f * flash, 0.81f, 0.98f);
 
         const char* gol = "G O L !";
-        texto(gol, WIN_W / 2.0f - 90, WIN_H / 2.0f + 10, GLUT_BITMAP_TIMES_ROMAN_24);
+        int gw = glutBitmapLength(GLUT_BITMAP_TIMES_ROMAN_24, (const unsigned char*)gol);
+        texto(gol, WIN_W / 2.0f - gw / 2.0f, WIN_H / 2.0f + 10, GLUT_BITMAP_TIMES_ROMAN_24);
 
-        const char* quem = (gGame.goalTeam == TEAM_A) ? "Time Amarelo marcou!" : "Time Azul marcou!";
+        const char* quem = (gGame.goalTeam == TEAM_A) ? "Gol do Brasil!" : "Gol da Argentina!";
+        int qw = glutBitmapLength(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)quem);
         glColor3f(1.0f, 1.0f, 1.0f);
-        texto(quem, WIN_W / 2.0f - 80, WIN_H / 2.0f - 25, GLUT_BITMAP_HELVETICA_18);
+        texto(quem, WIN_W / 2.0f - qw / 2.0f, WIN_H / 2.0f - 25, GLUT_BITMAP_HELVETICA_18);
+    }
+
+    // --- Resultado final (quando a partida termina) ---
+    if (gGame.matchOver) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(0.0f, 0.0f, 0.0f, 0.72f);
+        glBegin(GL_QUADS);
+            glVertex2f(WIN_W / 2.0f - 230, WIN_H / 2.0f - 80);
+            glVertex2f(WIN_W / 2.0f + 230, WIN_H / 2.0f - 80);
+            glVertex2f(WIN_W / 2.0f + 230, WIN_H / 2.0f + 80);
+            glVertex2f(WIN_W / 2.0f - 230, WIN_H / 2.0f + 80);
+        glEnd();
+        glDisable(GL_BLEND);
+
+        glColor3f(1.0f, 0.9f, 0.3f);
+        texto("FIM DE JOGO", WIN_W / 2.0f - 78, WIN_H / 2.0f + 42, GLUT_BITMAP_TIMES_ROMAN_24);
+
+        const char* res = (gGame.scoreA > gGame.scoreB) ? "Brasil venceu!"
+                        : (gGame.scoreB > gGame.scoreA) ? "Argentina venceu!"
+                        :                                 "Empate!";
+        // Centraliza pela largura real do texto (funciona para qualquer resultado)
+        int rw = glutBitmapLength(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)res);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        texto(res, WIN_W / 2.0f - rw / 2.0f, WIN_H / 2.0f + 6, GLUT_BITMAP_HELVETICA_18);
+
+        char fbuf[48];
+        snprintf(fbuf, sizeof(fbuf), "Brasil  %d  x  %d  Argentina", gGame.scoreA, gGame.scoreB);
+        texto(fbuf, WIN_W / 2.0f - 95, WIN_H / 2.0f - 26, GLUT_BITMAP_HELVETICA_18);
+
+        glColor3f(0.8f, 0.8f, 0.8f);
+        texto("R: jogar novamente", WIN_W / 2.0f - 62, WIN_H / 2.0f - 56, GLUT_BITMAP_HELVETICA_12);
     }
 
     // --- Horário atual (canto superior direito) ---

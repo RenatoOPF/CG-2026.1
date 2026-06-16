@@ -33,6 +33,9 @@ const int TEAM_B = 1;  // Azul claro
 
 enum CameraMode { CAM_BALL = 0, CAM_TV = 1, CAM_TOP = 2, CAM_FREE = 3 };
 
+// Duração da partida (segundos)
+const float MATCH_DURATION = 5400.0f;
+
 struct Ball {
     float x = 0.0f, y = BALL_R, z = 0.0f;
     float vx = 0.0f, vy = 0.0f, vz = 0.0f;
@@ -58,6 +61,7 @@ struct GameState {
     float goalTimer  = 0.0f;
     int   goalTeam   = -1;
     float time       = 0.0f;
+    bool  matchOver  = false;   // partida encerrada (timer chegou ao fim)
 };
 
 extern Ball                gBall;

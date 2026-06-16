@@ -64,41 +64,43 @@ void timer(int) {
         if (!apitou) { playApito(); apitou = true; }
     }
 
-    if (!gGame.goalActive) {
-        if (gCamera == CAM_FREE) {
-            // Modo drone: WASD voa, Q/E desce/sobe, setas olham ao redor.
-            // A bola e a IA seguem simulando, mas não recebem input do teclado.
-            float frente = 0, lado = 0, cima = 0, dyaw = 0, dpitch = 0;
-            if (keys['w'] || keys['W']) frente += 1.0f;
-            if (keys['s'] || keys['S']) frente -= 1.0f;
-            if (keys['d'] || keys['D']) lado   += 1.0f;
-            if (keys['a'] || keys['A']) lado   -= 1.0f;
-            if (keys['e'] || keys['E']) cima   += 1.0f;
-            if (keys['q'] || keys['Q']) cima   -= 1.0f;
-            if (specialKeys[GLUT_KEY_RIGHT]) dyaw   += 1.0f;
-            if (specialKeys[GLUT_KEY_LEFT])  dyaw   -= 1.0f;
-            if (specialKeys[GLUT_KEY_UP])    dpitch += 1.0f;
-            if (specialKeys[GLUT_KEY_DOWN])  dpitch -= 1.0f;
-            moverCameraLivre(dt, frente, lado, cima, dyaw, dpitch);
-            atualizarBola(dt, 0.0f, 0.0f);
-            atualizarIA(dt);
-            verificarGol();
-            glutPostRedisplay();
-            glutTimerFunc(16, timer, 0);
-            return;
-        }
+    // Fim da partida: apito final uma única vez e congela o jogo
+    if (gGame.time >= MATCH_DURATION && !gGame.matchOver) {
+        gGame.matchOver = true;
+        playApito();
+    }
 
-        // Na câmera TV o sinal inverte conforme o lado em que a câmera está,
-        // para que W/S/A/D sempre correspondam à direção visual na tela.
-        float sign = (gCamera == CAM_TOP) ? 1.0f : gCamSign;
+    // Câmera livre (drone): funciona em qualquer momento, inclusive após o fim
+    if (gCamera == CAM_FREE) {
+        float frente = 0, lado = 0, cima = 0, dyaw = 0, dpitch = 0;
+        if (keys['w'] || keys['W']) frente += 1.0f;
+        if (keys['s'] || keys['S']) frente -= 1.0f;
+        if (keys['d'] || keys['D']) lado   += 1.0f;
+        if (keys['a'] || keys['A']) lado   -= 1.0f;
+        if (keys[' '])              cima   += 1.0f;   // Espaço: sobe
+        if (keys['z'] || keys['Z']) cima   -= 1.0f;   // Z: desce
+        if (specialKeys[GLUT_KEY_RIGHT]) dyaw   += 1.0f;
+        if (specialKeys[GLUT_KEY_LEFT])  dyaw   -= 1.0f;
+        if (specialKeys[GLUT_KEY_UP])    dpitch += 1.0f;
+        if (specialKeys[GLUT_KEY_DOWN])  dpitch -= 1.0f;
+        moverCameraLivre(dt, frente, lado, cima, dyaw, dpitch);
+    }
 
+    if (gGame.matchOver) {
+        // Partida encerrada: bola e jogadores parados (resultado na tela)
+    } else if (!gGame.goalActive) {
         float dirX = 0, dirZ = 0;
-        if (keys['w'] || keys['W'] || specialKeys[GLUT_KEY_UP])    dirZ = -1.0f;
-        if (keys['s'] || keys['S'] || specialKeys[GLUT_KEY_DOWN])  dirZ =  1.0f;
-        if (keys['a'] || keys['A'] || specialKeys[GLUT_KEY_LEFT])  dirX = -1.0f;
-        if (keys['d'] || keys['D'] || specialKeys[GLUT_KEY_RIGHT]) dirX =  1.0f;
-        dirX *= sign;
-        dirZ *= sign;
+        if (gCamera != CAM_FREE) {
+            // Na câmera TV o sinal inverte conforme o lado da câmera, para que
+            // W/S/A/D sempre correspondam à direção visual na tela.
+            float sign = (gCamera == CAM_TOP) ? 1.0f : gCamSign;
+            if (keys['w'] || keys['W'] || specialKeys[GLUT_KEY_UP])    dirZ = -1.0f;
+            if (keys['s'] || keys['S'] || specialKeys[GLUT_KEY_DOWN])  dirZ =  1.0f;
+            if (keys['a'] || keys['A'] || specialKeys[GLUT_KEY_LEFT])  dirX = -1.0f;
+            if (keys['d'] || keys['D'] || specialKeys[GLUT_KEY_RIGHT]) dirX =  1.0f;
+            dirX *= sign;
+            dirZ *= sign;
+        }
         atualizarBola(dt, dirX, dirZ);
         atualizarIA(dt);
         verificarGol();
@@ -139,6 +141,11 @@ void keyboard(unsigned char key, int, int) {
     }
     if (key == 'l' || key == 'L') gLuzOn = !gLuzOn;
     if (key == 'h' || key == 'H') { gHorario = (gHorario + 1) % 3; atualizarCeu(); }
+    // Atalho secreto (não documentado): adianta o relógio p/ faltarem 5 segundos
+    if (key == 't' || key == 'T') {
+        float alvo = MATCH_DURATION - 5.0f;
+        gGame.time = (alvo > 0.0f) ? alvo : 0.0f;
+    }
     if (key == 27) exit(0);
 }
 void keyboardUp(unsigned char key, int, int) { keys[key] = false; }
@@ -193,7 +200,7 @@ int main(int argc, char** argv) {
     printf("=== Futebol 3D ===\n");
     printf("WASD / Setas : mover bola\n");
     printf("C            : alternar camera (Bola / TV / Aerea)\n");
-    printf("F            : camera livre (drone) - WASD voa, Q/E sobe-desce, MOUSE olha\n");
+    printf("F            : camera livre (drone) - WASD voa, Espaco/Z sobe-desce, MOUSE olha\n");
     printf("L            : ligar/desligar iluminacao\n");
     printf("H            : horario (meio-dia / entardecer / noite)\n");
     printf("R            : reiniciar\n");
