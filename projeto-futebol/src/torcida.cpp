@@ -10,7 +10,7 @@ static const int   NB  = 10;     // nº de degraus (fileiras)
 static const float STD = 1.3f;   // profundidade de cada degrau
 static const float STH = 1.2f;   // altura de cada degrau
 
-// Torcedor sentado (compacto para não sobressair no degrau)
+// Torcedor (compacto para não sobressair no degrau)
 static void torcedor(float x, float y, float z,
                      float r, float g, float b,
                      float ola) {
