@@ -85,15 +85,20 @@ void desenharTorcida() {
     }
 
     // --- Cantos arredondados (quartos de arco ligando laterais e fundos) ---
-    const int COLS_C = 7;
+    // Nº de torcedores PROPORCIONAL ao comprimento do arco (raio do anel): os
+    // anéis de baixo têm arco curto, então recebem poucos e não se amontoam.
+    const float ESPACO = 1.6f;   // espaçamento alvo entre torcedores no arco
     const float quad[4][2] = { {1,1}, {1,-1}, {-1,1}, {-1,-1} };
     for (auto& q : quad) {
         float sx = q[0], sz = q[1];
         for (int k = 0; k < NB; k++) {
             float rm    = (k + 0.5f) * STD;        // raio médio do degrau
             float yBase = (k + 1) * STH;
-            for (int col = 0; col < COLS_C; col++) {
-                float a = (col + 0.5f) / COLS_C * (float)M_PI * 0.5f;
+            float arco  = rm * (float)M_PI * 0.5f;          // comprimento do arco
+            int   cols  = (int)(arco / ESPACO);
+            if (cols < 1) continue;                          // anel mais interno fica vazio
+            for (int col = 0; col < cols; col++) {
+                float a = (col + 0.5f) / cols * (float)M_PI * 0.5f;
                 float bx = sx * (SX0 + rm * cosf(a));
                 float bz = sz * (SZ0 + rm * sinf(a));
                 float o  = ola((sx*sz) * a * 20.0f + k * 4.0f + 30.0f);

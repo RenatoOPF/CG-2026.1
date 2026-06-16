@@ -12,6 +12,7 @@ GLuint gTexPista    = 0;
 GLuint gTexRede     = 0;
 GLuint gTexCeu      = 0;
 GLuint gTexCeuTarde = 0;
+GLuint gTexCeuNoite = 0;
 
 // Hash determinístico por texel: gera ruído estável sem depender de rand()
 static unsigned hash2(unsigned x, unsigned y) {
@@ -185,5 +186,6 @@ void initTexturas() {
     // se faltar, gTexCeu fica 0 e o céu usa só a cor de fundo (glClearColor).
     gTexCeu      = carregarTexturaArquivo("assets/textures/ceu.jpg", true);
     gTexCeuTarde = carregarTexturaArquivo("assets/textures/ceu_entardecer.jpg", true);
+    gTexCeuNoite = carregarTexturaArquivo("assets/textures/ceu_noite.jpg", true);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }

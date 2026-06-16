@@ -37,6 +37,7 @@ void display() {
     if (iniciarSombra()) {
         desenharJogadores(true);
         desenharSombraBola();
+        desenharSombraGols();
         finalizarSombra();
     }
 
@@ -136,7 +137,7 @@ void keyboard(unsigned char key, int, int) {
         }
     }
     if (key == 'l' || key == 'L') gLuzOn = !gLuzOn;
-    if (key == 'n' || key == 'N') { gNoite = !gNoite; atualizarCeu(); }
+    if (key == 'h' || key == 'H') { gHorario = (gHorario + 1) % 3; atualizarCeu(); }
     if (key == 27) exit(0);
 }
 void keyboardUp(unsigned char key, int, int) { keys[key] = false; }
@@ -190,10 +191,10 @@ int main(int argc, char** argv) {
 
     printf("=== Futebol 3D ===\n");
     printf("WASD / Setas : mover bola\n");
-    printf("C            : alternar camera (Bola / TV / Topo)\n");
+    printf("C            : alternar camera (Bola / TV / Aerea)\n");
     printf("F            : camera livre (drone) - WASD voa, Q/E sobe-desce, MOUSE olha\n");
     printf("L            : ligar/desligar iluminacao\n");
-    printf("N            : alternar dia/noite (refletores)\n");
+    printf("H            : horario (meio-dia / entardecer / noite)\n");
     printf("R            : reiniciar\n");
     printf("ESC          : sair\n");
 

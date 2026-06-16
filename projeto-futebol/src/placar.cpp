@@ -73,12 +73,14 @@ void desenharPlacar() {
     }
 
     // --- Horário atual (canto superior direito) ---
-    const char* hora = gNoite ? "Horario: Entardecer" : "Horario: Meio-dia";
+    const char* hora = (gHorario == HORA_TARDE) ? "Horario: Entardecer"
+                     : (gHorario == HORA_NOITE) ? "Horario: Noite"
+                     :                            "Horario: Meio-dia";
     glColor3f(1.0f, 0.95f, 0.80f);
     texto(hora, WIN_W - 200, WIN_H - 30, GLUT_BITMAP_HELVETICA_18);
 
     // --- HUD inferior: controles e câmera ---
-    const char* cams[] = {"[Cam: Bola]", "[Cam: TV]", "[Cam: Topo]", "[Cam: Livre]"};
+    const char* cams[] = {"[Cam: Bola]", "[Cam: TV]", "[Cam: Aerea]", "[Cam: Livre]"};
     glColor3f(0.9f, 0.9f, 0.9f);
     texto(cams[gCamera], 10, WIN_H - 30, GLUT_BITMAP_HELVETICA_12);
     texto("WASD/Setas: mover bola   C: camera   L: luz   N: dia/noite   R: reiniciar   ESC: sair",

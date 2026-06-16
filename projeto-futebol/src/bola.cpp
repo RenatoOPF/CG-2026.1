@@ -142,11 +142,12 @@ void atualizarBola(float dt, float dirX, float dirZ) {
     gBall.x += gBall.vx * dt;
     gBall.z += gBall.vz * dt;
 
-    // Rolagem sem deslizamento: gira em torno do eixo horizontal perpendicular
-    // ao movimento, com ângulo = distância percorrida / raio.
+    // Rolagem em torno do eixo horizontal perpendicular ao movimento.
+    // ROLL é < 1 para um giro mais lento/suave que o rolar físico puro.
+    const float ROLL = 0.40f;
     float sp = sqrtf(gBall.vx*gBall.vx + gBall.vz*gBall.vz);
     if (sp > 0.01f) {
-        rotacionar(gBall.vz / sp, 0.0f, -gBall.vx / sp, sp * dt / BALL_R);
+        rotacionar(gBall.vz / sp, 0.0f, -gBall.vx / sp, ROLL * sp * dt / BALL_R);
     }
 
     const float hw = FW / 2.0f - BALL_R;

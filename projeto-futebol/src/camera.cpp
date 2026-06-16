@@ -86,7 +86,7 @@ void setupCamera() {
         }
 
         case CAM_TOP:
-            gluLookAt(0.0f, 110.0f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f);
+            gluLookAt(0.0f, 72.0f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f);
             break;
 
         case CAM_FREE: {

@@ -42,6 +42,30 @@ static void drawCylinder(GLUquadric* q,
     glPopMatrix();
 }
 
+// Estrutura (traves) de um gol: apenas os cilindros do quadro, sem a rede.
+// Reutilizada pelo desenho normal e pelo passe de sombra.
+static void framaGol(GLUquadric* q, float gz, float gdir) {
+    const float GW = GOAL_W / 2.0f, GH = GOAL_H, GD = GOAL_D, GR = 0.05f;
+    float gb = gz + gdir * GD;
+    // Postes verticais frontais
+    drawCylinder(q, -GW, 0.0f, gz, -GW, GH, gz, GR);
+    drawCylinder(q,  GW, 0.0f, gz,  GW, GH, gz, GR);
+    // Travessa horizontal frontal
+    drawCylinder(q, -GW, GH, gz,  GW, GH, gz, GR);
+    // Barras superiores de profundidade
+    drawCylinder(q, -GW, GH, gz, -GW, GH, gb, GR);
+    drawCylinder(q,  GW, GH, gz,  GW, GH, gb, GR);
+    // Barras inferiores de profundidade
+    drawCylinder(q, -GW, 0.0f, gz, -GW, 0.0f, gb, GR);
+    drawCylinder(q,  GW, 0.0f, gz,  GW, 0.0f, gb, GR);
+    // Postes verticais traseiros
+    drawCylinder(q, -GW, 0.0f, gb, -GW, GH, gb, GR);
+    drawCylinder(q,  GW, 0.0f, gb,  GW, GH, gb, GR);
+    // Barras traseiras (topo e base)
+    drawCylinder(q, -GW, GH,   gb,  GW, GH,   gb, GR);
+    drawCylinder(q, -GW, 0.0f, gb,  GW, 0.0f, gb, GR);
+}
+
 static void arcoCanto(float cx, float cz, float aInicio) {
     const float r = 0.7f;
     glBegin(GL_LINE_STRIP);
@@ -170,7 +194,6 @@ void desenharCampo() {
     const float GW = GOAL_W / 2.0f;
     const float GH = GOAL_H;
     const float GD = GOAL_D;
-    const float GR = 0.05f;
 
     glColor3f(1.0f, 1.0f, 1.0f);
     GLUquadric* q = gluNewQuadric();
@@ -179,23 +202,7 @@ void desenharCampo() {
 
     auto drawGoal = [&](float gz, float gdir) {
         float gb = gz + gdir * GD;
-        // Postes verticais frontais
-        drawCylinder(q, -GW, 0.0f, gz, -GW, GH, gz, GR);
-        drawCylinder(q,  GW, 0.0f, gz,  GW, GH, gz, GR);
-        // Travessa horizontal frontal
-        drawCylinder(q, -GW, GH, gz,  GW, GH, gz, GR);
-        // Barras superiores de profundidade
-        drawCylinder(q, -GW, GH, gz, -GW, GH, gb, GR);
-        drawCylinder(q,  GW, GH, gz,  GW, GH, gb, GR);
-        // Barras inferiores de profundidade
-        drawCylinder(q, -GW, 0.0f, gz, -GW, 0.0f, gb, GR);
-        drawCylinder(q,  GW, 0.0f, gz,  GW, 0.0f, gb, GR);
-        // Postes verticais traseiros
-        drawCylinder(q, -GW, 0.0f, gb, -GW, GH, gb, GR);
-        drawCylinder(q,  GW, 0.0f, gb,  GW, GH, gb, GR);
-        // Barras traseiras (topo e base)
-        drawCylinder(q, -GW, GH,   gb,  GW, GH,   gb, GR);
-        drawCylinder(q, -GW, 0.0f, gb,  GW, 0.0f, gb, GR);
+        framaGol(q, gz, gdir);   // estrutura (traves)
 
         // --- Rede: quads texturizados com furos (alpha test) cobrindo as
         //     faces traseira, laterais e superior do gol ---
@@ -246,4 +253,15 @@ void desenharCampo() {
 
     gluDeleteQuadric(q);
     glLineWidth(1.0f);
+}
+
+// Sombra das traves: só a estrutura dos dois gols, para o passe de sombra
+// (a rede é fina/transparente e não projeta sombra).
+void desenharSombraGols() {
+    const float hl = FL / 2.0f;
+    GLUquadric* q = gluNewQuadric();
+    gluQuadricNormals(q, GLU_NONE);
+    framaGol(q, -hl, -1.0f);
+    framaGol(q,  hl,  1.0f);
+    gluDeleteQuadric(q);
 }

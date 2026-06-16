@@ -1,7 +1,10 @@
 #pragma once
 
 extern bool gLuzOn;   // L: liga/desliga iluminação
-extern bool gNoite;   // N: alterna dia (sol) / noite (refletores)
+
+// Horário do dia (tecla H alterna em ciclo). Define luz, céu, sol/lua e sombras.
+enum Horario { HORA_DIA = 0, HORA_TARDE = 1, HORA_NOITE = 2 };
+extern int gHorario;
 
 void initIluminacao();
 void aplicarLuzes();   // chamada por frame, após setupCamera()

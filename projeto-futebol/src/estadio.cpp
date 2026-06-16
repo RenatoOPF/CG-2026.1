@@ -1,6 +1,7 @@
 #include "estadio.h"
 #include "globals.h"
 #include "texturas.h"
+#include "iluminacao.h"
 #include <GL/glut.h>
 #include <cmath>
 
@@ -295,13 +296,24 @@ void desenharEstadio() {
         glScalef(1.2f, TH, 1.2f);
         glutSolidCube(1.0f);
         glPopMatrix();
-        // Plataforma superior (apagada — só a estrutura metálica)
-        glColor3f(0.45f, 0.45f, 0.48f);
+        // Plataforma de refletores: acesa (emissiva) à noite, apagada de dia
+        bool noite = (gHorario == HORA_NOITE);
+        if (noite) {
+            const GLfloat em[] = {0.95f, 0.90f, 0.70f, 1.0f};
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, em);
+            glColor3f(1.0f, 0.96f, 0.80f);
+        } else {
+            glColor3f(0.45f, 0.45f, 0.48f);
+        }
         glPushMatrix();
         glTranslatef(c[0], TH+0.5f, c[1]);
         glScalef(4.0f, 0.7f, 4.0f);
         glutSolidCube(1.0f);
         glPopMatrix();
+        if (noite) {
+            const GLfloat emZero[] = {0.0f, 0.0f, 0.0f, 1.0f};
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emZero);
+        }
         glColor3f(0.72f, 0.72f, 0.72f);
     }
 
